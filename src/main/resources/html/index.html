@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="../static/jquery-2.2.3.min.js"></script>
+    <script src="../static/angular.min.js"></script>
+    <script src="../static/angular-select2.js"></script>
+</head>
+<body ng-app="generator" ng-controller="generatorController" ng-init="selectAllDataBases()">
+    <h1>代码生成器</h1>
+    <div>
+        <!--<select ng-model="entity" ng-options="item.dataBase as item.dataBase for item in entity">
+        </select>-->
+        <select select2 ng-model="data">
+            <option value="{{ item.dataBase }}" ng-repeat="item in entity">{{ item.dataBase }}</option>
+        </select>
+    </div>
+    <div>
+        <div>
+            作者:<input id="auther" ng-model="auther"/>
+            模块名称:<input id="modelName" ng-model="modelName"/>
+            <button ng-click="createCode()">生成代码</button>
+        </div>
+        <table>
+            <tr>
+                <td>序号</td>
+                <td>选中</td>
+                <td>表名</td>
+            </tr>
+            <tr ng-repeat="pojo in table">
+                <td ng-bind="$index+1"></td>
+                <td><input ng-click="updateSelection($event, pojo.tableName)" type="checkbox" /></td>
+                <td>{{pojo.tableName}}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+<script>
+    var app = angular.module("generator", []);
+    app.controller("generatorController",function ($scope,$http) {
+
+        $scope.selectIds=[];//选中的ID集合
+        //更新复选
+        $scope.updateSelection = function($event, id) {
+            if($event.target.checked){//如果是被选中,则增加到数组
+                $scope.selectIds.push( id);
+            }else{
+                var idx = $scope.selectIds.indexOf(id);
+                $scope.selectIds.splice(idx, 1);//删除
+            }
+        }
+
+        $scope.createCode = function(){
+            console.log($scope.selectIds);
+            $http.get("../generator/generatorCode?tableName="+$scope.selectIds+"&auther="+$scope.auther+"&modelName="+$scope.modelName).success(function (response) {
+               console.log(response);
+            })
+        }
+
+        $scope.selectAllDataBases = function () {
+            $http.get("../generator/selectAllDataBases").success(function (response) {
+                $scope.entity = response.data;
+            })
+        }
+
+
+        $scope.$watch("data",function (newValue,oldValue) {
+            $http.get("../generator/selectTableByDataBasesName?dataBasesName="+newValue).success(function (response) {
+                $scope.table = response.data;
+            })
+        })
+
+    })
+</script>
+</html>
